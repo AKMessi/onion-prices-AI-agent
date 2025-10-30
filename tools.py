@@ -3,10 +3,8 @@ import json
 from gtts import gTTS
 from firecrawl import Firecrawl
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.tools import tool
 from dotenv import load_dotenv
 
-@tool
 def scrape_onion_prices():
     """
     This is a tool that will be used to easily scrape the prices of onion in sangamner, nashik, sinnar, etc.
@@ -59,7 +57,6 @@ def scrape_onion_prices():
     
     return {"onion_prices": onion_prices.json}
 
-@tool
 def scrape_green_peas_prices():
     """
     This is a tool that will be used to easily scrape the prices of green peas in sangamner, nashik, sinnar, etc.
@@ -87,7 +84,6 @@ def scrape_green_peas_prices():
     
     return {"green_peas_prices": green_peas_prices.json}
 
-@tool
 def summarize(onion, green_peas):
     """
     This tool is for summarizing the prices of onion and green peas using Gemini 2.5 Flash.
@@ -124,7 +120,6 @@ def summarize(onion, green_peas):
 
     return {"marathi_script": result.content}
 
-@tool
 def generate_and_play_audio(script_text):
     """
     This tool converts the provided Marathi text script into an
