@@ -2,17 +2,15 @@ import os
 import json
 import io
 from flask import Flask, jsonify, send_from_directory, request, send_file
-from gtts import gTTS
-from firecrawl import Firecrawl
-from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain.tools import tool
 from dotenv import load_dotenv
 
-@tool
 def scrape_onion_prices():
     """
     This is a tool that will be used to easily scrape the prices of onion in sangamner, nashik, sinnar, etc.
     """
+    
+    from firecrawl import Firecrawl 
+    
     load_dotenv()
     api_key = os.getenv("FIRECRAWL_API_KEY")
     if not api_key:
@@ -26,32 +24,32 @@ def scrape_onion_prices():
             formats=[{
                 "type": "json",
                 "prompt": """
-                    Extract the latest available onion prices for the following locations: sangamner, lasalgaon, nashik, sinnar. Also include the date.
-                    Structure the output as a JSON object with a 'date' key and a 'locations' key.
-                    'locations' should be a list of objects.
-                    Each object in the 'locations' list must have a 'location' (string) and 'onionDetails' (list) key.
-                    'onionDetails' should be a list of objects, each with 'quality' (string), 'maxPrice' (number), and 'minPrice' (number).
+                        Extract the latest available onion prices for the following locations: sangamner, lasalgaon, nashik, sinnar. Also include the date.
+                        Structure the output as a JSON object with a 'date' key and a 'locations' key.
+                        'locations' should be a list of objects.
+                        Each object in the 'locations' list must have a 'location' (string) and 'onionDetails' (list) key.
+                        'onionDetails' should be a list of objects, each with 'quality' (string), 'maxPrice' (number), and 'minPrice' (number).
 
-                    Example format:
-                    {
-                    "date": "DD-MM-YYYY",
-                    "locations": [
+                        Example format:
                         {
-                        "location": "Sangamner",
-                        "onionDetails": [
-                            {"quality": "उन्हाळी", "maxPrice": 2000, "minPrice": 200}
-                        ]
-                        },
-                        {
-                        "location": "Lasalgaon",
-                        "onionDetails": [
-                            {"quality": "उन्हाळी", "maxPrice": 2152, "minPrice": 500}
+                        "date": "DD-MM-YYYY",
+                        "locations": [
+                            {
+                            "location": "Sangamner",
+                            "onionDetails": [
+                                {"quality": "उन्हाळी", "maxPrice": 2000, "minPrice": 200}
+                            ]
+                            },
+                            {
+                            "location": "Lasalgaon",
+                            "onionDetails": [
+                                {"quality": "उन्हाळी", "maxPrice": 2152, "minPrice": 500}
+                            ]
+                            }
                         ]
                         }
-                    ]
-                    }
-                    """
-                    }],
+                        """
+                        }],
             only_main_content=False,
             timeout=120000
         )
@@ -61,11 +59,13 @@ def scrape_onion_prices():
     
     return {"onion_prices": onion_prices.json}
 
-@tool
 def scrape_green_peas_prices():
     """
     This is a tool that will be used to easily scrape the prices of green peas in sangamner, nashik, sinnar, etc.
     """
+    
+    from firecrawl import Firecrawl
+
     load_dotenv()
     api_key = os.getenv("FIRECRAWL_API_KEY")
     if not api_key:
@@ -89,11 +89,12 @@ def scrape_green_peas_prices():
     
     return {"green_peas_prices": green_peas_prices.json}
 
-@tool
 def summarize(onion, green_peas):
     """
     This tool is for summarizing the prices of onion and green peas using Gemini 2.5 Flash.
     """
+    
+    from langchain_google_genai import ChatGoogleGenerativeAI
 
     combined_data = {
         "onion_prices": onion.get("onion_prices", {}),
@@ -130,19 +131,18 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return send_from_directory('.', 'index.html')
+    return send_from_directory('../', 'index.html')
 
 @app.route('/get-market-report', methods=['GET'])
 def run_report():
     try:
-        # scrape
-        onion_result = scrape_onion_prices.func()
-        peas_result = scrape_green_peas_prices.func()
+        
+        onion_result = scrape_onion_prices()
+        peas_result = scrape_green_peas_prices()
         if "Error" in str(onion_result) or "Error" in str(peas_result):
             raise Exception("Scraping error")
 
-        # summarize
-        summary_result = summarize.func(onion=onion_result, green_peas=peas_result)
+        summary_result = summarize(onion=onion_result, green_peas=peas_result)
         script_text = summary_result.get('marathi_script')
         if not script_text:
             raise Exception("Summarization error")
@@ -157,8 +157,9 @@ def run_report():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/generate-audio')
-
 def generate_audio_endpoint():
+
+    from gtts import gTTS
 
     script_text = request.args.get('text')
 
@@ -184,10 +185,4 @@ def generate_audio_endpoint():
     
 @app.route('/static/<path:filename>')
 def serve_static(filename):
-    return send_from_directory('static', filename)
-
-if __name__ == '__main__':
-    app.run(debug=True)
-else:
-    from werkzeug.middleware.proxy_fix import ProxyFix
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+    return send_from_directory('../static', filename)
