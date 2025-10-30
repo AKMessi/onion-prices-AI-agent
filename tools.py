@@ -1,6 +1,5 @@
 import os
 import json
-import pyttsx3
 from gtts import gTTS
 from firecrawl import Firecrawl
 from langchain_google_genai import ChatGoogleGenerativeAI
