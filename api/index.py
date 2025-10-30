@@ -4,11 +4,15 @@ import io
 from flask import Flask, jsonify, send_from_directory, request, send_file
 from dotenv import load_dotenv
 
+API_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(API_DIR)
+STATIC_ROOT = os.path.join(PROJECT_ROOT, 'static')
+
 def scrape_onion_prices():
     """
     This is a tool that will be used to easily scrape the prices of onion in sangamner, nashik, sinnar, etc.
     """
-    
+
     from firecrawl import Firecrawl 
     
     load_dotenv()
@@ -131,7 +135,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return send_from_directory('../', 'index.html')
+    return send_from_directory(PROJECT_ROOT, 'index.html')
 
 @app.route('/get-market-report', methods=['GET'])
 def run_report():
@@ -185,4 +189,4 @@ def generate_audio_endpoint():
     
 @app.route('/static/<path:filename>')
 def serve_static(filename):
-    return send_from_directory('../static', filename)
+    return send_from_directory(STATIC_ROOT, filename)
