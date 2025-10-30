@@ -3,40 +3,189 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>शेतकरी सहाय्यक</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <title>Daily Market Report</title>
     <style>
+        /* 1. Import Font */
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
+        /* 2. Basic Setup */
+        :root {
+            --primary-color: #00796b; /* A nice teal/green */
+            --light-bg: #f7f9fa;
+            --card-bg: #ffffff;
+            --text-color: #333;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
         body {
-            font-family: 'Inter', sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+            font-family: 'Roboto', sans-serif;
+            background-color: var(--light-bg);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            margin: 0;
         }
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            50% { transform: scale(1.05); box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
+
+        /* 3. Main Container */
+        .container {
+            width: 100%;
+            max-width: 600px;
+            padding: 24px;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            text-align: center;
         }
-        .is-recording { animation: pulse 1.5s infinite; }
+
+        h2 {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 24px;
+        }
+
+        /* 4. Button Styling */
+        #runButton {
+            font-size: 1.1em;
+            font-weight: 500;
+            padding: 12px 24px;
+            color: #fff;
+            background-color: var(--primary-color);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(0, 121, 107, 0.3);
+        }
+
+        #runButton:hover:not(:disabled) {
+            background-color: #004d40;
+            box-shadow: 0 4px 12px rgba(0, 77, 64, 0.4);
+            transform: translateY(-2px);
+        }
+
+        #runButton:disabled {
+            background-color: #b2dfdb; /* Lighter shade when disabled */
+            cursor: not-allowed;
+        }
+
+        /* 5. Loading Spinner */
+        #loading {
+            margin-top: 20px;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* 6. Results Area */
+        #result {
+            margin-top: 24px;
+            text-align: left;
+        }
+
+        h3 {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 8px;
+            margin-bottom: 16px;
+        }
+        
+        #script-container {
+            padding: 16px;
+            background-color: var(--light-bg);
+            border-radius: 8px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        #audioPlayer {
+            width: 100%;
+            margin-top: 15px;
+        }
+
+        /* 7. Error Message */
+        #error {
+            color: #d32f2f; /* Red for errors */
+            font-weight: 500;
+            margin-top: 16px;
+        }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen">
-    <div class="bg-white rounded-2xl shadow-2xl p-8 md:p-12 text-center max-w-lg w-full m-4">
+<body>
+
+    <div class="container">
+        <h2>Daily Market Report 🌾</h2>
+        <button id="runButton">Get Today's Report (आजचा अहवाल मिळवा)</button>
         
-        <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-4">शेतकरी सहाय्यक</h1>
-        <p class="text-lg text-gray-600 mb-8">
-            कृपया बटण दाबा आणि "कांदा भाव" किंवा "वाटाणा भाव" विचारा.
-        </p>
+        <div id="loading" style="display:none;">
+            <div class="spinner"></div>
+            <p>Loading... (लोड होत आहे...)</p>
+        </div>
+        
+        <div id="result" style="display:none;">
+            <h3>Marathi Script:</h3>
+            <div id="script-container"></div>
+            <audio id="audioPlayer" controls></audio>
+        </div>
 
-        <button id="micButton" class="bg-blue-600 text-white rounded-full p-8 shadow-lg transition-transform transform hover:scale-105 focus:outline-none">
-            <svg class="w-16 h-16" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
-            </svg>
-        </button>
-
-        <div id="status" class="mt-8 text-xl text-gray-700 font-medium h-16">&nbsp;</div>
-
+        <p id="error" style="display:none;"></p>
     </div>
 
-    <script src="app.js"></script>
+    <script>
+        document.getElementById('runButton').addEventListener('click', async () => {
+            const button = document.getElementById('runButton');
+            const loading = document.getElementById('loading');
+            const resultDiv = document.getElementById('result');
+            const scriptContainer = document.getElementById('script-container');
+            const audioPlayer = document.getElementById('audioPlayer');
+            const errorP = document.getElementById('error');
+
+            // 1. Show loading state
+            button.disabled = true;
+            loading.style.display = 'block';
+            resultDiv.style.display = 'none';
+            errorP.style.display = 'none';
+
+            try {
+                // 2. Call your Flask API
+                const response = await fetch('/get-market-report');
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error);
+                }
+
+                // 3. Populate the page with results
+                scriptContainer.innerText = data.script;
+                // Add a cache-buster to the URL to force reload
+                audioPlayer.src = data.audioUrl + '?t=' + new Date().getTime(); 
+                audioPlayer.load();
+                
+                resultDiv.style.display = 'block';
+
+            } catch (err) {
+                // 4. Show any errors
+                errorP.innerText = `An error occurred: ${err.message}`;
+                errorP.style.display = 'block';
+            } finally {
+                // 5. Reset button
+                button.disabled = false;
+                loading.style.display = 'none';
+            }
+        });
+    </script>
 </body>
 </html>
