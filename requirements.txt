@@ -4,3 +4,4 @@ firecrawl-py
 langchain-google-genai
 python-dotenv
 gunicorn
+langchain
