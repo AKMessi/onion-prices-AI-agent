@@ -24,8 +24,33 @@ def scrape_onion_prices():
             "https://www.krushikranti.com/bajarbhav/kanda-bajar-bhav-today",
             formats=[{
                 "type": "json",
-                "prompt": "Extract the latest available max and min prices and quality (ex. unhali, laal kanda, etc.) of onion in sangamner, lasalgaon, nashik, sinnar. Also mention the date in the result."
-            }],
+                "prompt": """
+                    Extract the latest available onion prices for the following locations: sangamner, lasalgaon, nashik, sinnar. Also include the date.
+                    Structure the output as a JSON object with a 'date' key and a 'locations' key.
+                    'locations' should be a list of objects.
+                    Each object in the 'locations' list must have a 'location' (string) and 'onionDetails' (list) key.
+                    'onionDetails' should be a list of objects, each with 'quality' (string), 'maxPrice' (number), and 'minPrice' (number).
+
+                    Example format:
+                    {
+                    "date": "DD-MM-YYYY",
+                    "locations": [
+                        {
+                        "location": "Sangamner",
+                        "onionDetails": [
+                            {"quality": "उन्हाळी", "maxPrice": 2000, "minPrice": 200}
+                        ]
+                        },
+                        {
+                        "location": "Lasalgaon",
+                        "onionDetails": [
+                            {"quality": "उन्हाळी", "maxPrice": 2152, "minPrice": 500}
+                        ]
+                        }
+                    ]
+                    }
+                    """
+                    }],
             only_main_content=False,
             timeout=120000
         )
@@ -86,7 +111,7 @@ def summarize(onion, green_peas):
 
         Critical Rules for the Output:
         1.  Language: Must be 100% in Marathi.
-        2.  Start: Begin with a polite greeting and the date.
+        2.  Start: Begin with a polite greeting for a grandmother and the date.
         3.  Context: Clearly state the prices for *both* commodities (कांदा आणि वाटाणा) and that prices are per quintal (प्रति क्विंटल).
         4.  Body: Read out the prices for onions first, then read out the prices for green peas.
         5.  Format: The *entire* response must be a single block of text. Do NOT use bullet points or markdown.
