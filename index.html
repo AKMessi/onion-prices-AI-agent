@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daily Market Report</title>
+    
+    <link rel="icon" type="image/png" href="/static/onion.png">
+
     <style>
         /* 1. Import Font */
         @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
@@ -39,6 +42,13 @@
             border-radius: 12px;
             box-shadow: var(--shadow);
             text-align: center;
+        }
+        
+        /* NEW: Logo CSS */
+        .logo {
+            width: 80px; /* Or whatever size you like */
+            height: auto;
+            margin-bottom: 15px;
         }
 
         h2 {
@@ -127,6 +137,9 @@
 <body>
 
     <div class="container">
+        
+        <img src="/static/onion.png" alt="Onion Logo" class="logo">
+
         <h2>Daily Market Report 🌾</h2>
         <button id="runButton">Get Today's Report (आजचा अहवाल मिळवा)</button>
         
@@ -168,20 +181,21 @@
                     throw new Error(data.error);
                 }
 
-                // 3. Populate the page with results
+                // 3. Populate the page with the script
                 scriptContainer.innerText = data.script;
-                // Add a cache-buster to the URL to force reload
-                audioPlayer.src = data.audioUrl + '?t=' + new Date().getTime(); 
+
+                // 4. Set the audio player's source to the new endpoint
+                audioPlayer.src = `/generate-audio?text=${encodeURIComponent(data.script)}`;
                 audioPlayer.load();
                 
                 resultDiv.style.display = 'block';
 
             } catch (err) {
-                // 4. Show any errors
+                // 5. Show any errors
                 errorP.innerText = `An error occurred: ${err.message}`;
                 errorP.style.display = 'block';
             } finally {
-                // 5. Reset button
+                // 6. Reset button
                 button.disabled = false;
                 loading.style.display = 'none';
             }

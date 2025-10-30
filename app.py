@@ -1,6 +1,7 @@
 import os
 import json
-from flask import Flask, jsonify, send_from_directory
+import io
+from flask import Flask, jsonify, send_from_directory, request, send_file
 from gtts import gTTS
 from firecrawl import Firecrawl
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -125,36 +126,6 @@ def summarize(onion, green_peas):
 
     return {"marathi_script": result.content}
 
-@tool
-def generate_audio(script_text):
-    """
-    This tool converts the provided Marathi text script into an
-    MP3 file using gTTS and saves it.
-    """
-
-    if not script_text:
-        return None
-        
-    audio_filename = 'daily_market_report.mp3'
-    
-    static_folder = 'static'
-    if not os.path.exists(static_folder):
-        os.makedirs(static_folder)
-        
-    audio_filepath = os.path.join(static_folder, audio_filename)
-    
-    try:
-        tts = gTTS(text=script_text, lang='mr', slow=False)
-        tts.save(audio_filepath)
-
-        print(f"Audio File Saved as {audio_filepath}")
-        
-        return f"/{static_folder}/{audio_filename}" 
-    
-    except Exception as e:
-        print(f"Error during audio generation: {e}")
-        return None
-    
 app = Flask(__name__)
 
 @app.route('/')
@@ -167,35 +138,56 @@ def run_report():
         # scrape
         onion_result = scrape_onion_prices.func()
         peas_result = scrape_green_peas_prices.func()
-
         if "Error" in str(onion_result) or "Error" in str(peas_result):
             raise Exception("Scraping error")
 
         # summarize
         summary_result = summarize.func(onion=onion_result, green_peas=peas_result)
         script_text = summary_result.get('marathi_script')
-        
         if not script_text:
             raise Exception("Summarization error")
             
-        # generate audio
-        audio_url = generate_audio.func(script_text=script_text)
-        
-        if not audio_url:
-            raise Exception("Audio generation error")
-
+        # send script to frontend
         return jsonify({
             'success': True,
-            'script': script_text,
-            'audioUrl': audio_url
+            'script': script_text
         })
 
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/generate-audio')
+
+def generate_audio_endpoint():
+
+    script_text = request.args.get('text')
+
+    if not script_text:
+        return "Error: No text provided.", 400
+        
+    try:
+        # create an in memory audio
+        audio_buffer = io.BytesIO()
+        
+        # generate tts and save to buffer
+        tts = gTTS(text=script_text, lang='mr', slow=False)
+        tts.write_to_fp(audio_buffer)
+        
+        # rewind the buffer
+        audio_buffer.seek(0)
+        
+        # send the buffer
+        return send_file(audio_buffer, mimetype='audio/mpeg')
+        
+    except Exception as e:
+        return f"Error during audio generation: {e}", 500
+    
 @app.route('/static/<path:filename>')
 def serve_static(filename):
     return send_from_directory('static', filename)
 
 if __name__ == '__main__':
     app.run(debug=True)
+else:
+    from werkzeug.middleware.proxy_fix import ProxyFix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)

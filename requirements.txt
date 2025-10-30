@@ -1,0 +1,6 @@
+Flask
+gTTS
+firecrawl-py
+langchain-google-genai
+python-dotenv
+gunicorn
